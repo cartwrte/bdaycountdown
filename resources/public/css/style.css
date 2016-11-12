@@ -1,0 +1,7 @@
+* {font-family: 'Raleway' !important; color:white;}
+h1 {font-weight:900 !important;}
+body {background: #333;}
+td {font-family: 'Space Mono' !important;
+    white-space: nowrap !important;}
+tr,td,th {border:none !important;}
+th {color: #AAA !important;}
