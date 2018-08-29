@@ -11,12 +11,15 @@
                  [org.clojure/core.async "0.2.391"
                   :exclusions [org.clojure/tools.reader]]
                  [com.andrewmcveigh/cljs-time "0.4.0"]
-                 [reagent "0.6.0"]]
+                 [reagent "0.6.0"]
+                 [com.cemerick/url "0.1.1"]]
 
   :plugins [[lein-figwheel "0.5.8"]
             [lein-cljsbuild "1.1.4" :exclusions [[org.clojure/clojure]]]]
 
   :source-paths ["src"]
+
+  :jvm-opts ["--add-modules" "java.xml.bind"]
 
   :clean-targets ^{:protect false} ["resources/public/js/compiled" "target"]
 

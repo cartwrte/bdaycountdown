@@ -1,19 +1,24 @@
 (ns bdaycountdown.core
   (:require [cljs-time.core :as t]
             [cljs-time.format :as f]
-            [reagent.core :as r]))
+            [reagent.core :as r]
+            [cemerick.url :refer (url url-encode)]))
 
 (enable-console-print!)
 
-;; define your app data so that it doesn't get over-written on reload
+(defonce state (r/atom {:now (t/now)}))
 
-(defonce state (r/atom {:now   (t/now)
-                        :bdays [{:name "Alex"
-                                 :bday (t/date-time 2008 12 25)}
-                                {:name "Sebastian"
-                                 :bday (t/date-time 2011 4 8)}]}))
+;;; Define birthdays on querystring, e.g., ?Max=2018/05/11
 
 (js/setInterval #(swap! state assoc :now (t/now)) 200)
+
+(defn bdays
+  []
+  (let [fmt (f/formatter "yyyy/M/d")
+        conv #(f/parse fmt %)
+        bdays-from-querystring (:query (url (-> js/window .-location .-href)))]
+    (map (fn [[name bday]] {:name name :bday (conv bday)})
+         bdays-from-querystring)))
 
 (defn birthday-this-year
   [bday]
@@ -48,8 +53,11 @@ interval to it."
         ival (t/interval bday (:now @state))
         years (t/in-years ival)
         total-months (t/in-months ival)
-        months (mod total-months 12)]
-    (str years "y " months "m")))
+        months (mod total-months 12)
+        weeks (t/in-weeks ival)]
+    (if (< total-months 12)
+      (str weeks " weeks (" total-months "m)")
+      (str years "y " months "m"))))
 
 (defn countdown-table-row
   [boy]
@@ -77,7 +85,7 @@ interval to it."
      [:th "Weeks"] [:th "Days"] [:th "Hours"] [:th "Minutes"] [:th "Seconds"]]]
    [:tbody
     (doall
-     (map countdown-table-row (:bdays @state)))]])
+     (map countdown-table-row (bdays)))]])
 
 (r/render [:div
            [:h1 "Birthday Countdown"]
