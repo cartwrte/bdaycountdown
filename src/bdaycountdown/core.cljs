@@ -12,14 +12,6 @@
 
 (js/setInterval #(swap! state assoc :now (t/now)) 200)
 
-(defn bdays
-  []
-  (let [fmt (f/formatter "yyyy/M/d")
-        conv #(f/parse fmt %)
-        bdays-from-querystring (:query (url (-> js/window .-location .-href)))]
-    (map (fn [[name bday]] {:name name :bday (conv bday)})
-         bdays-from-querystring)))
-
 (defn birthday-this-year
   [bday]
   (t/date-time (t/year (:now @state))
@@ -48,6 +40,16 @@ interval to it."
                     (birthday-this-year bday))]
     (t/interval (:now @state) next-bday)))
 
+(defn bdays
+  []
+  (let [fmt (f/formatter "yyyy/M/d")
+        parse-date #(f/parse fmt %)
+        bdays-from-querystring (:query (url (-> js/window .-location .-href)))]
+    (map (fn [[name bday]] {:name name
+                            :bday (parse-date bday)
+                            :interval-to-next (interval-to-next-birthday (parse-date bday))})
+         bdays-from-querystring)))
+
 (defn age-of [boy]
   (let [bday (:bday boy)
         ival (t/interval bday (:now @state))
@@ -61,7 +63,7 @@ interval to it."
 
 (defn countdown-table-row
   [boy]
-  (let [ival (interval-to-next-birthday (:bday boy))
+  (let [ival (:interval-to-next boy)
         fmt (f/formatter "d MMM yyyy")]
     ^{:key (.random js/Math)}
     [:tr
@@ -84,8 +86,15 @@ interval to it."
      [:th ""] [:th "Birthday"] [:th "Age"]
      [:th "Weeks"] [:th "Days"] [:th "Hours"] [:th "Minutes"] [:th "Seconds"]]]
    [:tbody
-    (doall
-     (map countdown-table-row (bdays)))]])
+    (let [interval (comp t/in-seconds :interval-to-next)]
+      (doall
+       (map countdown-table-row
+            (sort (fn [a b]
+                    (if (= (interval a) (interval b))
+                      0
+                      (< (interval a)
+                         (interval b))))
+                  (bdays)))))]])
 
 (r/render [:div
            [:h1 "Birthday Countdown"]
